@@ -22,6 +22,24 @@ void rebootCallback(const std_msgs::String::ConstPtr& msg)
   }
 }
 
+void runFFCCallback(const std_msgs::String::ConstPtr& msg)
+{
+  ros::NodeHandle n;
+  ros::ServiceClient client = n.serviceClient<flir_boson::RawCommand>("raw_command");
+  flir_boson::RawCommand srv;
+  srv.request.command = "00050007";
+  srv.request.data = "";
+
+  if (client.call(srv))
+  {
+    ROS_INFO("Running FFC");
+  }
+  else
+  {
+    ROS_ERROR("Failed to call service raw_command");
+  }
+}
+
 void colorpaletteCallback(const std_msgs::String::ConstPtr& msg)
 {
   ros::NodeHandle n;
@@ -62,11 +80,12 @@ int main(int argc, char **argv)
 
   //Subscriberes
   ros::Subscriber reboot_sub = n.subscribe("flir/command/thermal/reboot", 1000, rebootCallback);
+  ros::Subscriber run_ffc_sub = n.subscribe("flir/command/thermal/runffc", 1000, runFFCCallback);
   ros::Subscriber colorpalette_sub = n.subscribe("flir/command/thermal/colorpalette", 1000, colorpaletteCallback);
 
   ros::ServiceClient client = n.serviceClient<flir_boson::RawCommand>("raw_command");
   flir_boson::RawCommand srv;
-  ros::Rate loop_rate(0.1);
+  ros::Rate loop_rate(30);
 
   //Serial Number
   srv.request.command = "00050002";
@@ -135,33 +154,6 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
 
-    //Color Palette
-    srv.request.command = "000B0004";
-    srv.request.data = "";
-
-    if (client.call(srv))
-    {
-      response.str("");
-      response << "LUT ID: " << srv.response.output;
-      msg_lutid.data = response.str();
-      ROS_INFO("%s", msg_lutid.data.c_str());
-      lutid_pub.publish(msg_lutid);
-    }
-    else
-    {
-      ROS_ERROR("Failed to call service raw_command: lut id");
-    }
-
-    ROS_INFO("%s", msg_serialnumber.data.c_str());
-    ROS_INFO("%s", msg_partnumber.data.c_str());
-    ROS_INFO("%s", msg_fwversion.data.c_str());
-    ROS_INFO("%s", msg_coretemp.data.c_str());
-
-    serialnumber_pub.publish(msg_serialnumber);
-    partnumber_pub.publish(msg_partnumber);
-    fwversion_pub.publish(msg_fwversion);
-    coretemp_pub.publish(msg_coretemp);
-    
     ros::spinOnce();
 
     loop_rate.sleep();
