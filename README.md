@@ -53,3 +53,13 @@ $ rostopic pub /flir/command/thermal/reboot std_msgs/String -- \"00000001\"
 ```$xslt
 $ rostopic pub /flir/command/thermal/colorpalette std_msgs/String -- \"00000001\"
 ```
+
+# Running FFC
+Terminal 1:
+```
+roslaunch flir_boson.launch serial_port:=/dev/ttyACM0
+```
+Terminal 2:
+```
+rostopic pub -1 /flir/command/thermal/runffc std_msgs/String "'1'"
+```
